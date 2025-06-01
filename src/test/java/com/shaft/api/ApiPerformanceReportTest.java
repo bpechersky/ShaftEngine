@@ -1,10 +1,17 @@
 package com.shaft.api;
 
 import com.shaft.driver.SHAFT;
+
+
+import org.testng.Assert;
+import org.testng.annotations.BeforeSuite;
+import org.testng.annotations.Test;
+
+import com.shaft.driver.SHAFT;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
 import org.testng.annotations.AfterSuite;
-import org.testng.annotations.Test;
+
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -12,6 +19,12 @@ import java.util.List;
 
 
 public class ApiPerformanceReportTest {
+
+    @BeforeSuite
+    public void disableReportAutoOpen() {
+        System.setProperty("shaft.report.alwaysOpen", "false");
+    }
+
 
     String token;
     SHAFT.API api = new SHAFT.API("https://restful-booker.herokuapp.com/");
@@ -57,11 +70,15 @@ public class ApiPerformanceReportTest {
 
     @Test
     public void testGetBooking() {
+        SHAFT.API api = new SHAFT.API("https://restful-booker.herokuapp.com/"); // ✅ No trailing slash
+        api.get("booking/1")
+                .setTargetStatusCode(200)
+                .perform();
 
-        api.get("booking/1").
-                perform();
-
+        System.out.println("Status code: " + api.getResponseStatusCode());
+        System.out.println("Response: " + api.getResponseBody());
     }
+
 
     @Test
     public void testCreateBookingJSON() {
@@ -80,13 +97,26 @@ public class ApiPerformanceReportTest {
         List<List<Object>> parameters = Arrays.asList(Arrays.asList("page", "2"));
         api.get("api/users")
                 .setParameters(parameters, RestActions.ParametersType.QUERY)
+                .addHeader("x-api-key", "reqres-free-v1") // ✅ Required
                 .perform();
+
+        int statusCode = api.getResponseStatusCode();
+        String responseBody = api.getResponseBody();
+
+        System.out.println("Status Code: " + statusCode);
+        System.out.println("Response Body: " + responseBody);
+
+        org.testng.Assert.assertEquals(statusCode, 200, "Expected HTTP 200 OK");
     }
 
     @Test
     public void testGetUser() {
         SHAFT.API api = new SHAFT.API("https://reqres.in/");
         api.get("api/users/2").perform();
+        api.assertThatResponse()
+                .extractedJsonValue("data.id")
+                .isEqualTo("2") // Compare using string literal
+                .perform();
     }
 
     @Test
@@ -94,24 +124,44 @@ public class ApiPerformanceReportTest {
         SHAFT.API api = new SHAFT.API("https://reqres.in/");
         api.post("api/users")
                 .setContentType("application/json")
+                .addHeader("x-api-key", "reqres-free-v1") // ✅ API Key here
                 .setRequestBody("{\n" +
                         "  \"name\": \"morpheus\",\n" +
                         "  \"job\": \"leader\"\n" +
                         "}")
                 .perform();
+
+        int statusCode = api.getResponseStatusCode();
+        String responseBody = api.getResponseBody();
+
+        System.out.println("Status Code: " + statusCode);
+        System.out.println("Response: " + responseBody);
+
+        Assert.assertEquals(statusCode, 201, "Expected HTTP 201 Created");
     }
 
     @Test
     public void testRegisterUser() {
         SHAFT.API api = new SHAFT.API("https://reqres.in/");
+
         api.post("api/register")
                 .setContentType("application/json")
+                .addHeader("x-api-key", "reqres-free-v1")  // ✅ REQUIRED
                 .setRequestBody("{\n" +
                         "    \"email\": \"eve.holt@reqres.in\",\n" +
                         "    \"password\": \"pistol\"\n" +
                         "}")
                 .perform();
+
+        int statusCode = api.getResponseStatusCode();
+        String responseBody = api.getResponseBody();
+
+        System.out.println("Status Code: " + statusCode);
+        System.out.println("Response Body: " + responseBody);
+
+        org.testng.Assert.assertEquals(statusCode, 200, "Expected 200 OK");
     }
+
 
     @Test
     public void testLoginUser() {
@@ -119,12 +169,22 @@ public class ApiPerformanceReportTest {
 
         api.post("api/login")
                 .setContentType("application/json")
+                .addHeader("x-api-key", "reqres-free-v1") // ✅ required for all requests now
                 .setRequestBody("{\n" +
                         "    \"email\": \"eve.holt@reqres.in\",\n" +
                         "    \"password\": \"cityslicka\"\n" +
                         "}")
                 .perform();
+
+        int statusCode = api.getResponseStatusCode();
+        String response = api.getResponseBody();
+
+        System.out.println("Status Code: " + statusCode);
+        System.out.println("Response Body: " + response);
+
+        org.testng.Assert.assertEquals(statusCode, 200, "Expected 200 OK from login");
     }
+
 
     @Test
     public void testDelayedResponse() {
@@ -133,13 +193,31 @@ public class ApiPerformanceReportTest {
 
         api.get("api/users")
                 .setParameters(parameters, RestActions.ParametersType.QUERY)
+                .addHeader("x-api-key", "reqres-free-v1") // ✅ Required API key
                 .perform();
+
+        int statusCode = api.getResponseStatusCode();
+        String responseBody = api.getResponseBody();
+
+        System.out.println("Status Code: " + statusCode);
+        System.out.println("Response: " + responseBody);
     }
 
     @Test
     public void testGetActivities() {
         SHAFT.API api = new SHAFT.API("https://fakerestapi.azurewebsites.net/api/v1/");
-        api.get("Activities/1").perform();
+
+        api.get("Activities/1")
+                .addHeader("User-Agent", "Mozilla/5.0") // optional, mimics browser
+                .perform();
+
+        int statusCode = api.getResponseStatusCode();
+        String responseBody = api.getResponseBody();
+
+        System.out.println("Status Code: " + statusCode);
+        System.out.println("Response: " + responseBody);
+
+        Assert.assertEquals(statusCode, 200, "Expected HTTP 200 OK");
     }
 
     @Test
@@ -213,6 +291,7 @@ public class ApiPerformanceReportTest {
         //RequestBuilder.generatePerformanceReport("src/test/resources/report.html");
         //RequestBuilder.printPerformanceReport();
         // HTMLPerformanceReport.generatePerformanceReport();
+        //com.shaft.driver.SHAFT.Engine.tearDownAllDrivers();
 
     }
 

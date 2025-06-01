@@ -954,6 +954,14 @@
                         <version>3.5.2</version>
                         <dependencies>
                             <dependency>
+                                <groupId>io.github.shafthq</groupId>
+                                <artifactId>SHAFT_ENGINE</artifactId>
+                                <version>9.2.20250530</version>
+                            </dependency>
+
+
+
+                            <dependency>
                                 <groupId>org.aspectj</groupId>
                                 <artifactId>aspectjweaver</artifactId>
                                 <version>1.9.23</version>
